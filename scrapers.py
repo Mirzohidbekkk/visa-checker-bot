@@ -1,175 +1,201 @@
 """
-Web scrapers for visa status checking in Russia, Turkey, and Saudi Arabia
+Visa scrapers for different countries
+Supports: Russia, Turkey, Saudi Arabia
 """
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-import json
-from typing import Dict, Optional
+import logging
 
-class RussiaFMSScraper:
-    """Scraper for Russian FMS (Federal Migration Service) visa information"""
-    
-    BASE_URL = "https://ufms.gov.ru"
-    
-    @staticmethod
-    def check_visa_status(passport_number: str, full_name: str) -> Dict:
-        """
-        Check visa status from Russian FMS
-        Returns visa information
-        """
-        try:
-            # Note: FMS doesn't provide public API for visa status
-            # This is a simulated check - in production, you'd need to:
-            # 1. Use Selenium to navigate the website
-            # 2. Fill in forms with passport data
-            # 3. Parse the results
-            
-            visa_info = {
-                'country': 'Россия',
-                'country_en': 'Russia',
-                'visa_type': 'Туристическая виза',
-                'status': 'active',
-                'issue_date': (datetime.now() - timedelta(days=30)).strftime("%d.%m.%Y"),
-                'expiry_date': (datetime.now() + timedelta(days=60)).strftime("%d.%m.%Y"),
-                'days_remaining': 60,
-                'note': 'Виза активна. Внимание: требуется регистрация в России!'
-            }
-            return visa_info
-        except Exception as e:
-            return {'error': f'Ошибка при проверке визы России: {str(e)}'}
-
-
-class TurkeyEScraper:
-    """Scraper for Turkish e-Visa information"""
-    
-    BASE_URL = "https://www.evisa.gov.tr"
-    
-    @staticmethod
-    def check_visa_status(passport_number: str, full_name: str) -> Dict:
-        """
-        Check e-Visa status from Turkish government
-        Returns visa information
-        """
-        try:
-            # Turkish e-Visa is typically instant
-            # This simulates the check
-            
-            visa_info = {
-                'country': 'Türkiye',
-                'country_en': 'Turkey',
-                'visa_type': 'e-Visa (Elektronik Vize)',
-                'status': 'approved',
-                'issue_date': (datetime.now() - timedelta(days=5)).strftime("%d.%m.%Y"),
-                'expiry_date': (datetime.now() + timedelta(days=175)).strftime("%d.%m.%Y"),
-                'days_remaining': 175,
-                'entries': 'Multiple',
-                'note': 'e-Viza kabul edilmiştir. Geçerlilik: 6 ay'
-            }
-            return visa_info
-        except Exception as e:
-            return {'error': f'Error checking Turkey visa: {str(e)}'}
-
-
-class SaudiArabiaEScraper:
-    """Scraper for Saudi Arabia e-Visa information"""
-    
-    BASE_URL = "https://www.visaservices.gov.sa"
-    
-    @staticmethod
-    def check_visa_status(passport_number: str, full_name: str) -> Dict:
-        """
-        Check e-Visa status from Saudi Arabia government
-        Returns visa information
-        """
-        try:
-            # Saudi Arabia e-Visa information
-            visa_info = {
-                'country': 'المملكة العربية السعودية',
-                'country_en': 'Saudi Arabia',
-                'visa_type': 'Tourist e-Visa',
-                'status': 'active',
-                'issue_date': (datetime.now() - timedelta(days=15)).strftime("%d.%m.%Y"),
-                'expiry_date': (datetime.now() + timedelta(days=75)).strftime("%d.%m.%Y"),
-                'days_remaining': 75,
-                'validity': '90 days',
-                'entries': 'Multiple',
-                'note': 'Your Saudi e-Visa is valid. Multiple entry allowed.'
-            }
-            return visa_info
-        except Exception as e:
-            return {'error': f'Error checking Saudi Arabia visa: {str(e)}'}
-
+logger = logging.getLogger(__name__)
 
 class VisaChecker:
-    """Main visa checker that coordinates all scrapers"""
+    """Main visa checker class"""
     
-    SCRAPERS = {
-        'russia': RussiaFMSScraper,
-        'turkey': TurkeyEScraper,
-        'saudi_arabia': SaudiArabiaEScraper
+    BASE_URLS = {
+        'russia': 'https://www.mfa.gov.ru/en/visa/',
+        'turkey': 'https://www.evisa.gov.tr/en/',
+        'saudi_arabia': 'https://www.visitsaudi.com/en/'
     }
     
-    COUNTRY_NAMES = {
-        'russia': {'uz': 'Rossiya', 'en': 'Russia', 'ru': 'Россия'},
-        'turkey': {'uz': 'Turkiya', 'en': 'Turkey', 'ru': 'Турция'},
-        'saudi_arabia': {'uz': 'Saudiya Arabistoni', 'en': 'Saudi Arabia', 'ru': 'Саудовская Аравия'}
-    }
-    
-    @classmethod
-    def check_visa(cls, country: str, passport_number: str, full_name: str) -> Dict:
+    @staticmethod
+    def check_visa(country: str, passport: str, full_name: str) -> dict:
         """
-        Check visa status for specified country
+        Check visa status for a specific country
+        
+        Args:
+            country: Country code (russia, turkey, saudi_arabia)
+            passport: Passport number
+            full_name: Full name of the person
+            
+        Returns:
+            Dictionary with visa information
         """
-        country_lower = country.lower().strip()
-        
-        if country_lower not in cls.SCRAPERS:
-            return {'error': f'Country {country} not supported'}
-        
-        scraper = cls.SCRAPERS[country_lower]
-        return scraper.check_visa_status(passport_number, full_name)
+        try:
+            if country == 'russia':
+                return VisaChecker._check_russia_visa(passport, full_name)
+            elif country == 'turkey':
+                return VisaChecker._check_turkey_visa(passport, full_name)
+            elif country == 'saudi_arabia':
+                return VisaChecker._check_saudi_visa(passport, full_name)
+            else:
+                return {'error': 'Unknown country'}
+        except Exception as e:
+            logger.error(f"Error checking visa for {country}: {str(e)}")
+            return {'error': str(e)}
     
-    @classmethod
-    def get_supported_countries(cls) -> list:
-        """Return list of supported countries"""
-        return list(cls.SCRAPERS.keys())
+    @staticmethod
+    def _check_russia_visa(passport: str, full_name: str) -> dict:
+        """
+        Check Russia visa status
+        Simulates FMS API check
+        """
+        try:
+            # Simulate API call
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            # In production, this would call actual FMS API
+            # For now, we simulate a response
+            visa_info = {
+                'country': 'Russia',
+                'visa_type': 'Tourist Visa',
+                'issue_date': '01.01.2024',
+                'expiry_date': '31.12.2024',
+                'status': 'active',
+                'days_remaining': VisaChecker._calculate_days_remaining('31.12.2024')
+            }
+            
+            logger.info(f"Russia visa checked for {passport}")
+            return visa_info
+            
+        except Exception as e:
+            logger.error(f"Error checking Russia visa: {str(e)}")
+            return {'error': f'Failed to check Russia visa: {str(e)}'}
     
-    @classmethod
-    def format_visa_info(cls, visa_info: Dict, language: str = 'uz') -> str:
-        """Format visa information for display"""
+    @staticmethod
+    def _check_turkey_visa(passport: str, full_name: str) -> dict:
+        """
+        Check Turkey e-Visa status
+        Simulates e-Visa API check
+        """
+        try:
+            # In production, this would call actual e-Visa API
+            visa_info = {
+                'country': 'Turkey',
+                'visa_type': 'e-Visa',
+                'issue_date': '15.03.2024',
+                'expiry_date': '15.09.2024',
+                'status': 'active',
+                'days_remaining': VisaChecker._calculate_days_remaining('15.09.2024')
+            }
+            
+            logger.info(f"Turkey visa checked for {passport}")
+            return visa_info
+            
+        except Exception as e:
+            logger.error(f"Error checking Turkey visa: {str(e)}")
+            return {'error': f'Failed to check Turkey visa: {str(e)}'}
+    
+    @staticmethod
+    def _check_saudi_visa(passport: str, full_name: str) -> dict:
+        """
+        Check Saudi Arabia tourist e-Visa status
+        """
+        try:
+            # In production, this would call actual Saudi e-Visa API
+            visa_info = {
+                'country': 'Saudi Arabia',
+                'visa_type': 'Tourist e-Visa',
+                'issue_date': '20.05.2024',
+                'expiry_date': '20.08.2024',
+                'status': 'active',
+                'days_remaining': VisaChecker._calculate_days_remaining('20.08.2024')
+            }
+            
+            logger.info(f"Saudi Arabia visa checked for {passport}")
+            return visa_info
+            
+        except Exception as e:
+            logger.error(f"Error checking Saudi Arabia visa: {str(e)}")
+            return {'error': f'Failed to check Saudi Arabia visa: {str(e)}'}
+    
+    @staticmethod
+    def _calculate_days_remaining(expiry_date: str) -> int:
+        """
+        Calculate days remaining until visa expiry
         
+        Args:
+            expiry_date: Date in format DD.MM.YYYY
+            
+        Returns:
+            Number of days remaining
+        """
+        try:
+            exp_date = datetime.strptime(expiry_date, '%d.%m.%Y')
+            today = datetime.now()
+            remaining = (exp_date - today).days
+            return max(0, remaining)
+        except:
+            return 0
+    
+    @staticmethod
+    def format_visa_info(visa_info: dict, language: str = 'uz') -> str:
+        """
+        Format visa information for display
+        
+        Args:
+            visa_info: Dictionary with visa information
+            language: Language code (uz, en, ru)
+            
+        Returns:
+            Formatted string for display
+        """
         if 'error' in visa_info:
             return f"❌ Xato: {visa_info['error']}"
         
-        info = f"""
-📋 *Viza Ma'lumotlari*
-
-🌍 Davlat: {visa_info.get('country', 'N/A')}
-📝 Viza Turi: {visa_info.get('visa_type', 'N/A')}
-✅ Holat: {visa_info.get('status', 'N/A')}
-
-📅 Berilgan Sana: {visa_info.get('issue_date', 'N/A')}
-📅 Tugash Sanasi: {visa_info.get('expiry_date', 'N/A')}
-⏰ Qolgan Kunlar: *{visa_info.get('days_remaining', 'N/A')} kun*
-
-📌 Eslatma: {visa_info.get('note', 'N/A')}
-        """
+        country = visa_info.get('country', 'N/A')
+        visa_type = visa_info.get('visa_type', 'N/A')
+        issue_date = visa_info.get('issue_date', 'N/A')
+        expiry_date = visa_info.get('expiry_date', 'N/A')
+        status = visa_info.get('status', 'N/A')
+        days_remaining = visa_info.get('days_remaining', 0)
         
-        return info
-
-
-if __name__ == "__main__":
-    # Test scrapers
-    checker = VisaChecker()
-    
-    # Test Russia
-    result = checker.check_visa('russia', '12345678', 'John Doe')
-    print("Russia:", result)
-    
-    # Test Turkey
-    result = checker.check_visa('turkey', '12345678', 'John Doe')
-    print("Turkey:", result)
-    
-    # Test Saudi Arabia
-    result = checker.check_visa('saudi_arabia', '12345678', 'John Doe')
-    print("Saudi Arabia:", result)
+        # Determine status emoji
+        if days_remaining > 30:
+            status_emoji = '🔊'
+        elif days_remaining > 7:
+            status_emoji = '⚠️'
+        else:
+            status_emoji = '❌'
+        
+        if language == 'uz':
+            formatted = (
+                f"🌍 *{country}* Vizasi\n\n"
+                f"📝 Turi: {visa_type}\n"
+                f"📅 Boshlanish: {issue_date}\n"
+                f"📅 Tugash: {expiry_date}\n"
+                f"{status_emoji} Qolgan: {days_remaining} kun\n"
+                f"✅ Holat: {status.upper()}\n\n"
+            )
+        elif language == 'en':
+            formatted = (
+                f"🌍 *{country}* Visa\n\n"
+                f"📝 Type: {visa_type}\n"
+                f"📅 Issued: {issue_date}\n"
+                f"📅 Expires: {expiry_date}\n"
+                f"{status_emoji} Days Left: {days_remaining}\n"
+                f"✅ Status: {status.upper()}\n\n"
+            )
+        else:  # Russian
+            formatted = (
+                f"🌍 *{country}* Виза\n\n"
+                f"📝 Тип: {visa_type}\n"
+                f"📅 Выдана: {issue_date}\n"
+                f"📅 Истекает: {expiry_date}\n"
+                f"{status_emoji} Осталось: {days_remaining} дней\n"
+                f"✅ Статус: {status.upper()}\n\n"
+            )
+        
+        return formatted
